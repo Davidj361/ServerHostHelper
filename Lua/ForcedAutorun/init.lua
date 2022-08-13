@@ -119,13 +119,11 @@ elseif SERVER then
 	local function handleBots()
 		local n = count()
 		local m = Game.ServerSettings.MaxPlayers
-		if n ~= m then
-			for i=1,(math.abs(n-m)) do
-				if n > m then
-					removeBot()
-				elseif n < m then
-					addBot()
-				end
+		for i=1,(math.abs(n-m)) do
+			if n > m then
+				removeBot()
+			elseif n < m then
+				addBot()
 			end
 		end
 		Log("Removed bots")
@@ -162,25 +160,25 @@ elseif SERVER then
 	end)
 	
 	
-	-- Hook.Add("chatMessage", "debugging", function(message)
-	-- 
-	-- 	print("message = "..message)
-	-- 	if message == "c" then
-	-- 		for key, client in pairs(Client.ClientList) do
-	-- 			print("g")
-	-- 		end
-	-- 	elseif message == "h" then
-	-- 		handleBots()
-	-- 		Log("Handling")
-	-- 	elseif message == "a" then
-	-- 		addBot()
-	-- 		Log("Handling")
-	-- 	elseif message == "r" then
-	-- 		removeBot()
-	-- 		Log("Handling")
-	-- 	elseif message == "t" then
-	-- 		for i=1,1 do print("i = "..i) end
-	-- 	end
-	-- end)
+	--Hook.Add("chatMessage", "debugging", function(message)
+	--
+	--	print("message = "..message)
+	--	if message == "c" then
+	--		for key, client in pairs(Client.ClientList) do
+	--			print("g")
+	--		end
+	--	elseif message == "h" then
+	--		handleBots()
+	--		Log("Handling")
+	--	elseif message == "a" then
+	--		addBot()
+	--		Log("Handling")
+	--	elseif message == "r" then
+	--		removeBot()
+	--		Log("Handling")
+	--	elseif message == "t" then
+	--		for i=1,1 do print("i = "..i) end
+	--	end
+	--end)
 	
 end
