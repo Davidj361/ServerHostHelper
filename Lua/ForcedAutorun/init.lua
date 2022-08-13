@@ -100,23 +100,25 @@ elseif SERVER then
 	
 	
 	local function count()
+		Log("Counting...")
 		local nPly = 0
 		local nBots = 0
 		for key, chara in pairs(Client.ClientList) do
-			if chara.TeamID == CharacterTeamType.Team1 then
-				nPly = nPly+1
-			end
+			nPly = nPly+1
 		end
 		for key, chara in pairs(Character.CharacterList) do
 			if chara.TeamID == CharacterTeamType.Team1 and chara.IsBot and not chara.IsDead then
 				nBots = nBots+1
 			end
 		end
+		Log("nPly = "..nPly)
+		Log("nBots = "..nBots)
 		return nPly+nBots
 	end
 	
 	
 	local function handleBots()
+		Log("Handling bots")
 		local n = count()
 		local m = Game.ServerSettings.MaxPlayers
 		for i=1,(math.abs(n-m)) do
@@ -126,7 +128,6 @@ elseif SERVER then
 				addBot()
 			end
 		end
-		Log("Removed bots")
 	end
 	
 	
