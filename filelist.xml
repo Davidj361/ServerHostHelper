@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<contentpackage name="Server Host Helper" modversion="0.1" corepackage="False" altnames="ServerHostHelper">
+  <!-- <Other file="%ModDir%/Lua/Autorun/init.lua" /> -->
+</contentpackage>
