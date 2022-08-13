@@ -44,7 +44,7 @@ elseif SERVER then
 	local session = Game.GameSession
 	local crewManager = session.CrewManager
 	
-	local function createBot()
+	local function addBot()
 		local chr = CharacterInfo("human")
 		chr.TeamID = CharacterTeamType.Team1
 		crewManager.AddCharacterInfo(chr)
@@ -84,34 +84,7 @@ elseif SERVER then
 		
 		local character = Character.Create(chr, waypoint.WorldPosition, Game.NetLobbyScreen.LevelSeed)
 		character.GiveJobItems()
-	end
-	
-	
-	local function count()
-		local ret={}
-		ret.nPly = 1
-		ret.nBots = 2
-		return ret
-	end
-	
-	
-	local function createBots()
-		local n = 0
-		local nBots = 0
-		for key, chara in pairs(Client.ClientList) do
-			if chara.TeamID == CharacterTeamType.Team1 then
-				n = n+1
-			end
-		end
-		for key, chara in pairs(Character.CharacterList) do
-			if chara.TeamID == CharacterTeamType.Team1 and chara.IsBot and not chara.IsDead then
-				nBots = nBots+1
-			end
-		end
-		
-		if (n >= Game.ServerSettings.MaxPlayers) then return end
-		for i=1,(Game.ServerSettings.MaxPlayers - n) do createBot() end
-		Log("Added bots")
+		Log("Added bot")
 	end
 	
 	
@@ -122,15 +95,16 @@ elseif SERVER then
 				return
 			end
 		end
+		Log("Removed bot")
 	end
 	
 	
-	local function removeBots()
-		local n = 0
+	local function count()
+		local nPly = 0
 		local nBots = 0
 		for key, chara in pairs(Client.ClientList) do
 			if chara.TeamID == CharacterTeamType.Team1 then
-				n = n+1
+				nPly = nPly+1
 			end
 		end
 		for key, chara in pairs(Character.CharacterList) do
@@ -138,10 +112,29 @@ elseif SERVER then
 				nBots = nBots+1
 			end
 		end
-		
-		for i=1,(Game.ServerSettings.MaxPlayers - n) do removeBot() end
+		return nPly+nBots
+	end
+	
+	
+	local function handleBots()
+		local n = count()
+		local m = Game.ServerSettings.MaxPlayers
+		if n ~= m then
+			for i=1,(math.abs(n-m)) do
+				if n > m then
+					removeBot()
+				elseif n < m then
+					addBot()
+				end
+			end
+		end
 		Log("Removed bots")
 	end
+	
+	
+	Hook.Add("client.connected", "removeBotOnConnect", handleBots)
+	Hook.Add("client.disconnected", "addBotOnDisconnect", handleBots)
+	Hook.Add("roundStart", "addBotOnRoundStart", handleBots)
 	
 	
 	Hook.Add("roundEnd", "saveBackup", function()
@@ -169,31 +162,25 @@ elseif SERVER then
 	end)
 	
 	
-	Hook.Add("chatMessage", "zxcv", function(message)
-
-		print("message = "..message)
-		if message == "c" then
-			for key, client in pairs(Client.ClientList) do
-				print("g")
-			end
-		elseif message == "m" then
-			createBots()
-			Log("Making")
-		elseif message == "d" then
-			removeBots()
-			Log("Removing")
-		elseif message == "t" then
-			local a=0
-			local b=0
-			local foo = count(a, b)
-			print(foo.nPly.." "..foo.nBots)
-			Log("testing")
-		end
-	end)
-	
-	
-	Hook.Add("client.connected", "removeBotOnConnect", removeBots)
-	Hook.Add("client.disconnected", "addBotOnDisconnect", createBots)
-	Hook.Add("roundStart", "addBotOnRoundStart", createBots)
+	-- Hook.Add("chatMessage", "debugging", function(message)
+	-- 
+	-- 	print("message = "..message)
+	-- 	if message == "c" then
+	-- 		for key, client in pairs(Client.ClientList) do
+	-- 			print("g")
+	-- 		end
+	-- 	elseif message == "h" then
+	-- 		handleBots()
+	-- 		Log("Handling")
+	-- 	elseif message == "a" then
+	-- 		addBot()
+	-- 		Log("Handling")
+	-- 	elseif message == "r" then
+	-- 		removeBot()
+	-- 		Log("Handling")
+	-- 	elseif message == "t" then
+	-- 		for i=1,1 do print("i = "..i) end
+	-- 	end
+	-- end)
 	
 end
