@@ -47,7 +47,7 @@ if CLIENT then
 
 
   -- catch faulty user inputted key configs
-  local function tryKey() 
+  local function tryKey()
     if PlayerInput.KeyHit(Keys[SHH.Config.logKey]) then
       GameMain.Client.ShowLogButton.OnClicked.Invoke()
     end
