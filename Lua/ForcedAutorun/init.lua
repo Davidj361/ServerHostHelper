@@ -45,12 +45,19 @@ if CLIENT then
 	LuaUserData.RegisterType("Barotrauma.GameMain")
 	local GameMain = LuaUserData.CreateStatic("Barotrauma.GameMain")
 
+
+  -- catch faulty user inputted key configs
+  local function tryKey() 
+    if PlayerInput.KeyHit(Keys[SHH.Config.logKey]) then
+      GameMain.Client.ShowLogButton.OnClicked.Invoke()
+    end
+  end
+
   Hook.Add("think", "logWindowHotkey",
            function()
              if not Game.IsMultiplayer or GUI.GUI.KeyboardDispatcher.Subscriber ~= nil then return end -- Avoid main menu or executing with chat focused
-
-             if PlayerInput.KeyHit(Keys[SHH.Config.logKey]) then
-               GameMain.Client.ShowLogButton.OnClicked.Invoke()
+             if not pcall(tryKey) then -- catch faulty user inputted key configs
+               SHH.Log("!!! BAD HOTKEY PROVIDED FOR LOG WINDOW !!!")
              end
   end)
 

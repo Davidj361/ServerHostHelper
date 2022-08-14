@@ -78,13 +78,13 @@ SHH.ShowGUI = function ()
 
 
 
-    GUI.TextBlock(GUI.RectTransform(Vector2(1, 0.05), config.Content.RectTransform), "Hotkey for Server Log Popup (proper capitals)",
+    GUI.TextBlock(GUI.RectTransform(Vector2(1, 0.05), config.Content.RectTransform), "Hotkey for Server Log Popup (proper capitals and press Enter)",
                   nil, nil, GUI.Alignment.Center, true)
     local logKey = GUI.TextBox(GUI.RectTransform(Vector2(1, 0.1), config.Content.RectTransform))
     logKey.Text = SHH.Config.logKey
-    logKey.OnTextChanged = function ()
-      SHH.Log("CHANGED")
-      --SHH.Config.logKey = logKey.Text
+    logKey.OnEnterPressed = function ()
+      SHH.Log("changed!")
+      SHH.Config.logKey = logKey.Text
     end
 
     GUI.TextBlock(GUI.RectTransform(Vector2(1, 0.05), config.Content.RectTransform), "Organ damage gain multiplier", nil, nil, GUI.Alignment.Center, true)
