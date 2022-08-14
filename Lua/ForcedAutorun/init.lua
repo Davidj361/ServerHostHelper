@@ -38,13 +38,12 @@ elseif SERVER then
 	local maxBackups = 5
 	local savePath = ""
 	LuaUserData.RegisterType("Barotrauma.SaveUtil")
-	LuaUserData.RegisterType("Barotrauma.CrewManager")
-	local CrewManager = LuaUserData.CreateStatic("Barotrauma.CrewManager")
 	local SaveUtil = LuaUserData.CreateStatic("Barotrauma.SaveUtil")
-	local session = Game.GameSession
-	local crewManager = session.CrewManager
+	
 	
 	local function addBot()
+		local session = Game.GameSession
+		local crewManager = session.CrewManager
 		local chr = CharacterInfo("human")
 		chr.TeamID = CharacterTeamType.Team1
 		crewManager.AddCharacterInfo(chr)
@@ -103,9 +102,10 @@ elseif SERVER then
 		Log("Counting...")
 		local nPly = 0
 		local nBots = 0
-		for key, chara in pairs(Client.ClientList) do
-			nPly = nPly+1
-		end
+		-- for key, chara in pairs(Client.ClientList) do
+		-- 	nPly = nPly+1
+		-- end
+		nPly = #Client.ClientList
 		for key, chara in pairs(Character.CharacterList) do
 			if chara.TeamID == CharacterTeamType.Team1 and chara.IsBot and not chara.IsDead then
 				nBots = nBots+1
@@ -131,13 +131,8 @@ elseif SERVER then
 	end
 	
 	
-	Hook.Add("client.connected", "removeBotOnConnect", handleBots)
-	Hook.Add("client.disconnected", "addBotOnDisconnect", handleBots)
-	Hook.Add("roundStart", "addBotOnRoundStart", handleBots)
-	
-	
-	Hook.Add("roundEnd", "saveBackup", function()
-		print(modName .. " Backing up save...")
+	local function backup()
+		Log("Backing up save...")
 		
 		local tmp = Game.GameSession.SavePath
 		if savePath ~= tmp then
@@ -157,8 +152,15 @@ elseif SERVER then
 		Game.GameSession.Save(basePath .. xmlFilename)
 		
 		counter = (counter + 1) % maxBackups
-		print(modName .. " Save is backed up!")
-	end)
+		Log("Save is backed up!")
+	end
+	
+	
+	-- Hooks
+	Hook.Add("client.connected", "handleBotsOnConnect", handleBots)
+	Hook.Add("client.disconnected", "handleBotsOnDisconnect", handleBots)
+	Hook.Add("roundStart", "handleBotsOnRoundStart", handleBots)
+	Hook.Add("roundEnd", "saveBackup", backup)
 	
 	
 	--Hook.Add("chatMessage", "debugging", function(message)
