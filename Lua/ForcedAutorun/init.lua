@@ -1,50 +1,72 @@
-local SHH = {}
-local modName = '[ServerHostHelper]'
+SHH = {}
+SHH.name = '[ServerHostHelper]'
+SHH.Log = function (message)
+	print(SHH.name .. " " .. message)
+end
+SHH.Path = table.pack(...)[1]
 local hello = "Starting up!"
-local Log = function (message)
-	print(modName .. " " .. message)
+
+
+-- config loading
+
+if SHH.config == nil then
+  if not File.Exists(SHH.Path .. "/config.json") then
+
+    -- create default config if there is no config file
+    SHH.Config = dofile(SHH.Path .. "/Lua/defaultconfig.lua")
+    File.Write(SHH.Path .. "/config.json", json.serialize(SHH.Config))
+
+  else
+
+    -- load existing config
+    SHH.Config = json.parse(File.Read(SHH.Path .. "/config.json"))
+
+    -- add missing entries
+    local defaultConfig = dofile(SHH.Path .. "/Lua/defaultconfig.lua")
+    for key, value in pairs(defaultConfig) do
+      if SHH.Config[key] == nil then
+        SHH.Config[key] = value
+      end
+    end
+  end
 end
 
--- local function mod.ToggleGUI()
--- 	mod.GUIOpen = not mod.GUIOpen
---
---     if mod.GUIOpen then
---         mod.ShowGUI()
---     else
---         mod.HideGUI()
---     end
--- end
 
 
 if CLIENT then
 
-	if mod.cl == nil then
-		mod.cl = {}
+	if SHH.cl == nil then
+		SHH.cl = {}
 	else
 		return
 	end
 
-	Log("[Client] "..hello)
+	SHH.Log("[Client] "..hello)
 	LuaUserData.RegisterType("Barotrauma.GameMain")
 	local GameMain = LuaUserData.CreateStatic("Barotrauma.GameMain")
 
-	Hook.Add("think", "logWindowHotkey", function()
-		if GUI.GUI.KeyboardDispatcher.Subscriber ~= nil then return end -- Avoid executing with chat focused
-		if PlayerInput.KeyHit(Keys.Z) then
-			GameMain.Client.ShowLogButton.OnClicked.Invoke()
-		end
-	end)
+  Hook.Add("think", "logWindowHotkey",
+           function()
+             if not Game.IsMultiplayer or GUI.GUI.KeyboardDispatcher.Subscriber ~= nil then return end -- Avoid main menu or executing with chat focused
 
+             if PlayerInput.KeyHit(Keys[SHH.Config.logKey]) then
+               GameMain.Client.ShowLogButton.OnClicked.Invoke()
+             end
+  end)
+
+  -- Add a GUI for configuration
+  SHH.Log("path: "..SHH.Path)
+  dofile(SHH.Path .. "/Lua/configGui.lua")
 
 elseif SERVER then
 
-	if mod.sv == nil then
-		mod.sv = {}
+	if SHH.sv == nil then
+		SHH.sv = {}
 	else
 		return
 	end
 
-	Log("[Server] "..hello)
+	SHH.Log("[Server] "..hello)
 	local counter = 0
 	local maxBackups = 5
 	local savePath = ""
@@ -83,18 +105,18 @@ elseif SERVER then
 
 		-- none found, go random
 		if waypoint == nil then
-			MidRoundSpawn.Log("WARN: No valid job waypoint found for " .. chr.Job.Name.Value .. " - using random")
+			SHH.Log("WARN: No valid job waypoint found for " .. chr.Job.Name.Value .. " - using random")
 			waypoint = WayPoint.GetRandom(SpawnType.Human, nil, Submarine.MainSub)
 		end
 
 		if waypoint == nil then
-			MidRoundSpawn.Log("ERROR: Could not spawn player - no valid waypoint found")
+			SHH.Log("ERROR: Could not spawn player - no valid waypoint found")
 			return false
 		end
 
 		local character = Character.Create(chr, waypoint.WorldPosition, Game.NetLobbyScreen.LevelSeed)
 		character.GiveJobItems()
-		Log("Added bot")
+		SHH.Log("Added bot")
 	end
 
 
@@ -105,12 +127,12 @@ elseif SERVER then
 				return
 			end
 		end
-		Log("Removed bot")
+		SHH.Log("Removed bot")
 	end
 
 
 	local function count()
-		Log("Counting...")
+		SHH.Log("Counting...")
 		local nPly = 0
 		local nBots = 0
 		-- for key, chara in pairs(Client.ClientList) do
@@ -122,14 +144,14 @@ elseif SERVER then
 				nBots = nBots+1
 			end
 		end
-		Log("nPly = "..nPly)
-		Log("nBots = "..nBots)
+		SHH.Log("nPly = "..nPly)
+		SHH.Log("nBots = "..nBots)
 		return nPly+nBots
 	end
 
 
 	local function handleBots()
-		Log("Handling bots")
+		SHH.Log("Handling bots")
 		local n = count()
 		local m = Game.ServerSettings.MaxPlayers
 		for i=1,(math.abs(n-m)) do
@@ -143,7 +165,7 @@ elseif SERVER then
 
 
 	local function backup()
-		Log("Backing up save...")
+		SHH.Log("Backing up save...")
 
 		local tmp = Game.GameSession.SavePath
 		if savePath ~= tmp then
@@ -163,7 +185,7 @@ elseif SERVER then
 		Game.GameSession.Save(basePath .. xmlFilename)
 
 		counter = (counter + 1) % maxBackups
-		Log("Save is backed up!")
+		SHH.Log("Save is backed up!")
 	end
 
 
@@ -172,12 +194,6 @@ elseif SERVER then
 	Hook.Add("client.disconnected", "handleBotsOnDisconnect", handleBots)
 	Hook.Add("roundStart", "handleBotsOnRoundStart", handleBots)
 	Hook.Add("roundEnd", "saveBackup", backup)
-
-
-	-- Commands
-	Game.AddCommand("shh", "Opens Server Host Helper's config", function ()
-		NT.ToggleGUI()
-	end)
 
 
 	--Hook.Add("chatMessage", "debugging", function(message)
@@ -189,13 +205,13 @@ elseif SERVER then
 	--		end
 	--	elseif message == "h" then
 	--		handleBots()
-	--		Log("Handling")
+	--		SHH.Log("Handling")
 	--	elseif message == "a" then
 	--		addBot()
-	--		Log("Handling")
+	--		SHH.Log("Handling")
 	--	elseif message == "r" then
 	--		removeBot()
-	--		Log("Handling")
+	--		SHH.Log("Handling")
 	--	elseif message == "t" then
 	--		for i=1,1 do print("i = "..i) end
 	--	end
