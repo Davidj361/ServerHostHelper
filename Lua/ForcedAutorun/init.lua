@@ -216,6 +216,7 @@ elseif SERVER then
     for key, chara in pairs(Character.CharacterList) do
       if chara.TeamID == CharacterTeamType.Team1 and chara.IsBot and not chara.IsDead and chara.Info.Job.Name.Value == j then
         chara.Kill(CauseOfDeathType.Unknown)
+        chara.DespawnNow()
         return
       end
     end
@@ -285,17 +286,17 @@ elseif SERVER then
   Hook.Add("roundEnd", "saveBackup", backup)
 
 
-  Hook.Add("chatMessage", "debugging", function(message)
+  --Hook.Add("chatMessage", "debugging", function(message)
 
-  	SHH.Log("message = "..message)
-  	if message == "t" then
-      SHH.Log("least job: "..getJob())
-      SHH.Log("most job: "..getJob(true))
-    elseif message == "a" then
-      addBot()
-    elseif message == "r" then
-      removeBot()
-  	end
-  end)
+  --	SHH.Log("message = "..message)
+  --	if message == "t" then
+  --    SHH.Log("least job: "..getJob())
+  --    SHH.Log("most job: "..getJob(true))
+  --  elseif message == "a" then
+  --    addBot()
+  --  elseif message == "r" then
+  --    removeBot()
+  --	end
+  --end)
 
 end
