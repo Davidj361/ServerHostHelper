@@ -62,7 +62,6 @@ if CLIENT then
   end)
 
   -- Add a GUI for configuration
-  SHH.Log("path: "..SHH.Path)
   dofile(SHH.Path .. "/Lua/configGui.lua")
 
 elseif SERVER then
@@ -81,34 +80,86 @@ elseif SERVER then
   local SaveUtil = LuaUserData.CreateStatic("Barotrauma.SaveUtil")
 
 
-  local function getJob()
-    -- var mechanicInfo = new CharacterInfo(CharacterPrefab.HumanSpeciesName, jobOrJobPrefab: JobPrefab.Get("mechanic"))
+  -- Gets the least or most occupied job on the crew
+  local function getJob(getMax)
     local jobs = {}
+    jobs['Captain'] = {c=0,b=false} -- c = count, b = has bots
+    jobs['Mechanic'] = {c=0,b=false}
+    jobs['Engineer'] = {c=0,b=false}
+    jobs['Security Officer'] = {c=0,b=false}
+    jobs['Medical Doctor'] = {c=0,b=false}
+    jobs['Assistant'] = {c=0,b=false}
+
     for key, chara in pairs(Character.CharacterList) do
       if chara.TeamID == CharacterTeamType.Team1 and ((chara.IsBot and not chara.IsDead) or (not chara.IsBot)) then
-        local j = chara.Info.Job
-        if jobs[j.Name] == nil then
-          --Log("string: "..j.ToString())
-          jobs[j.Name] = 0
-        -- else
-        --   jobs[j.ToString()] = jobs[j.ToString()] + 1
+        if chara.IsCaptain then
+          jobs['Captain'].c = jobs['Captain'].c + 1
+          if chara.IsBot then
+            jobs['Captain'].b = true
+          end
+
+        elseif chara.IsMechanic then
+          jobs['Mechanic'].c = jobs['Mechanic'].c + 1
+          if chara.IsBot then
+            jobs['Mechanic'].b = true
+          end
+
+        elseif chara.IsEngineer then
+          jobs['Engineer'].c = jobs['Engineer'].c + 1
+          if chara.IsBot then
+            jobs['Engineer'].b = true
+          end
+
+        elseif chara.IsSecurity then
+          jobs['Security Officer'].c = jobs['Security Officer'].c + 1
+          if chara.IsBot then
+            jobs['Security Officer'].b = true
+          end
+
+        elseif chara.IsMedic then
+          jobs['Medical Doctor'].c = jobs['Medical Doctor'].c + 1
+          if chara.IsBot then
+            jobs['Medical Doctor'].b = true
+          end
+
+        elseif chara.IsAssistant then
+          jobs['Assistant'].c = jobs['Assistant'].c + 1
+          if chara.IsBot then
+            jobs['Assistant'].b = true
+          end
         end
       end
     end
 
-    local min = nil
+
     local job = ""
-    for k,v in pairs(jobs) do
-      SHH.Log("k: "..k)
-      --SHH.Log("v: "..v)
-      if min == nil then
-        job = k
-        min = v
-      elseif v < min then
-        job = k
-        min = v
+    local i = nil
+
+    if getMax then -- removing bots
+      for k,v in pairs(jobs) do
+        if v.b then
+          if i == nil then
+            job = k
+            i = v.c
+          elseif v.c > i then
+            job = k
+            i = v.c
+          end
+        end
+      end
+
+    else -- adding bots
+      for k,v in pairs(jobs) do
+        if i == nil then
+          job = k
+          i = v.c
+        elseif v.c < i then
+          job = k
+          i = v.c
+        end
       end
     end
+
     return job
   end
 
@@ -116,8 +167,8 @@ elseif SERVER then
   local function addBot()
     local session = Game.GameSession
     local crewManager = session.CrewManager
-    -- var mechanicInfo = new CharacterInfo(CharacterPrefab.HumanSpeciesName, jobOrJobPrefab: JobPrefab.Get("mechanic"))
-    local chr = CharacterInfo("human")
+    local j = getJob():gsub("%s+", "") -- get least occupied job, no spaces
+    local chr = CharacterInfo(CharacterPrefab.HumanSpeciesName,"","", JobPrefab.Get(j))
     chr.TeamID = CharacterTeamType.Team1
     crewManager.AddCharacterInfo(chr)
 
@@ -161,8 +212,9 @@ elseif SERVER then
 
 
   local function removeBot()
+    local j = getJob(true) -- get most occupied job
     for key, chara in pairs(Character.CharacterList) do
-      if chara.TeamID == CharacterTeamType.Team1 and chara.IsBot and not chara.IsDead then
+      if chara.TeamID == CharacterTeamType.Team1 and chara.IsBot and not chara.IsDead and chara.Info.Job.Name.Value == j then
         chara.Kill(CauseOfDeathType.Unknown)
         return
       end
@@ -235,9 +287,14 @@ elseif SERVER then
 
   Hook.Add("chatMessage", "debugging", function(message)
 
-  	print("message = "..message)
+  	SHH.Log("message = "..message)
   	if message == "t" then
-      SHH.Log("job: "..getJob())
+      SHH.Log("least job: "..getJob())
+      SHH.Log("most job: "..getJob(true))
+    elseif message == "a" then
+      addBot()
+    elseif message == "r" then
+      removeBot()
   	end
   end)
 
