@@ -153,7 +153,9 @@ elseif SERVER then
 
     else -- adding bots
       for k,v in pairs(jobs) do
-        if i == nil then
+        if k == "Captain" and jobs["Captain"].c >= 1 then
+          -- skip it, only need 1 captain
+        elseif i == nil then
           job = k
           i = v.c
         elseif v.c < i then
