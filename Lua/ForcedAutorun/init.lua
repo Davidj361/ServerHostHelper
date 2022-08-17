@@ -244,10 +244,13 @@ elseif SERVER then
   end
 
 
-  SHH.handleBots = function ()
+  SHH.handleBots = function (removeBots) -- need this to deal with count() being wrong on disconnects
     if not SHH.Config.bots then return end
     SHH.Log("Handling bots")
     local n = count()
+    if removeBots then
+      n = n - 1
+    end
     local m = Game.ServerSettings.MaxPlayers
     for i=1,(math.abs(n-m)) do
       if n > m then
@@ -287,25 +290,25 @@ elseif SERVER then
 
   -- Hooks
   Hook.Add("client.connected", "handleBotsOnConnect", SHH.handleBots)
-  Hook.Add("client.disconnected", "handleBotsOnDisconnect", SHH.handleBots)
+  Hook.Add("client.disconnected", "handleBotsOnDisconnect", function() SHH.handleBots(true) end) -- need this to deal with count() being wrong on disconnects
   Hook.Add("roundStart", "handleBotsOnRoundStart", SHH.handleBots)
   Hook.Add("roundEnd", "saveBackup", backup)
 
 
-  -- Hook.Add("chatMessage", "debugging", function(message)
-  -- 	SHH.Log("message = "..message)
-  -- 	if message == "t" then
-  --     SHH.Log("least job: "..getJob())
-  --     SHH.Log("most job: "..getJob(true))
-  --   elseif message == "a" then
-  --     addBot()
-  --   elseif message == "r" then
-  --     removeBot()
-  --   elseif message == "h" then
-  --     SHH.handleBots()
-  --   elseif message == "s" then
-  --     backup()
-  -- 	end
-  -- end)
+  --Hook.Add("chatMessage", "debugging", function(message)
+  --	SHH.Log("message = "..message)
+  --	if message == "t" then
+  --    SHH.Log("least job: "..getJob())
+  --    SHH.Log("most job: "..getJob(true))
+  --  elseif message == "a" then
+  --    addBot()
+  --  elseif message == "r" then
+  --    removeBot()
+  --  elseif message == "h" then
+  --    SHH.handleBots()
+  --  elseif message == "s" then
+  --    backup()
+  --	end
+  --end)
 
 end
