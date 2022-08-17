@@ -3,5 +3,8 @@
 local config = {}
 
 config.logKey = "Z"
+config.bots = true
+config.backup = true
+config.backupCount = 5
 
 return config

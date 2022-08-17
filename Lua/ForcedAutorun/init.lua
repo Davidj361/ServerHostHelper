@@ -7,6 +7,10 @@ SHH.Path = table.pack(...)[1]
 local hello = "Starting up!"
 
 
+-- Functions
+SHH.handleBots = function() end
+
+
 -- config loading
 
 if SHH.config == nil then
@@ -73,8 +77,7 @@ elseif SERVER then
   end
 
   SHH.Log("[Server] "..hello)
-  local counter = 0
-  local maxBackups = 5
+  local saveCount = 0
   local savePath = ""
   LuaUserData.RegisterType("Barotrauma.SaveUtil")
   local SaveUtil = LuaUserData.CreateStatic("Barotrauma.SaveUtil")
@@ -166,6 +169,7 @@ elseif SERVER then
 
   local function addBot()
     local session = Game.GameSession
+    if (session == nil or session.CrewManager == nil) then return end
     local crewManager = session.CrewManager
     local j = getJob():gsub("%s+", "") -- get least occupied job, no spaces
     local chr = CharacterInfo(CharacterPrefab.HumanSpeciesName,"","", JobPrefab.Get(j))
@@ -240,7 +244,8 @@ elseif SERVER then
   end
 
 
-  local function handleBots()
+  SHH.handleBots = function ()
+    if not SHH.Config.bots then return end
     SHH.Log("Handling bots")
     local n = count()
     local m = Game.ServerSettings.MaxPlayers
@@ -255,48 +260,52 @@ elseif SERVER then
 
 
   local function backup()
+    if not SHH.Config.backup then return end
     SHH.Log("Backing up save...")
 
     local tmp = Game.GameSession.SavePath
     if savePath ~= tmp then
       savePath = tmp
-      counter = 0
+      saveCount = 0
     end
 
     local basePath = string.match(savePath, "^.*\\")
     local baseName = string.match(savePath, "\\([^\\]*)$")
     baseName = string.match(baseName, "(.*)[.]")
 
-    local saveFilename = baseName .. '-' .. counter .. '.save'
-    local xmlFilename = baseName .. '-' .. counter .. '_CharacterData.xml'
+    local saveFilename = baseName .. '-' .. saveCount .. '.save'
+    local xmlFilename = baseName .. '-' .. saveCount .. '_CharacterData.xml'
 
     --Game.SaveGame(basePath .. saveFilename) -- Doesn't always work
     SaveUtil.SaveGame(basePath .. saveFilename)
     Game.GameSession.Save(basePath .. xmlFilename)
 
-    counter = (counter + 1) % maxBackups
+    saveCount = (saveCount + 1) % SHH.Config.backupCount
     SHH.Log("Save is backed up!")
   end
 
 
   -- Hooks
-  Hook.Add("client.connected", "handleBotsOnConnect", handleBots)
-  Hook.Add("client.disconnected", "handleBotsOnDisconnect", handleBots)
-  Hook.Add("roundStart", "handleBotsOnRoundStart", handleBots)
+  Hook.Add("client.connected", "handleBotsOnConnect", SHH.handleBots)
+  Hook.Add("client.disconnected", "handleBotsOnDisconnect", SHH.handleBots)
+  Hook.Add("roundStart", "handleBotsOnRoundStart", SHH.handleBots)
   Hook.Add("roundEnd", "saveBackup", backup)
 
 
-  --Hook.Add("chatMessage", "debugging", function(message)
-
-  --	SHH.Log("message = "..message)
-  --	if message == "t" then
-  --    SHH.Log("least job: "..getJob())
-  --    SHH.Log("most job: "..getJob(true))
-  --  elseif message == "a" then
-  --    addBot()
-  --  elseif message == "r" then
-  --    removeBot()
-  --	end
-  --end)
+  -- Hook.Add("chatMessage", "debugging", function(message)
+  -- 	SHH.Log("message = "..message)
+  -- 	if message == "t" then
+  --     SHH.Log("least job: "..getJob())
+  --     SHH.Log("most job: "..getJob(true))
+  --   elseif message == "a" then
+  --     addBot()
+  --   elseif message == "r" then
+  --     removeBot()
+  --   elseif message == "h" then
+  --     SHH.handleBots()
+  --   elseif message == "s" then
+  --     backup()
+  -- 	end
+  -- end)
 
 end

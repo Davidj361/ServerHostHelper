@@ -88,6 +88,30 @@ SHH.ShowGUI = function ()
     end
 
 
+    local bots = GUI.TickBox(GUI.RectTransform(Vector2(1, 0.2), config.Content.RectTransform), "Fill empty server slots with bots?")
+    bots.Selected = SHH.Config.bots
+    bots.OnSelected = function ()
+      SHH.Config.bots = bots.State == 3
+    end
+
+
+    local backup = GUI.TickBox(GUI.RectTransform(Vector2(1, 0.2), config.Content.RectTransform), "Enable save rollbacks?")
+    backup.Selected = SHH.Config.backup
+    backup.OnSelected = function ()
+      SHH.Config.backup = backup.State == 3
+    end
+
+    GUI.TextBlock(GUI.RectTransform(Vector2(1, 0.05), config.Content.RectTransform), "Number of rollbacks", nil, nil, GUI.Alignment.Center, true)
+    local backupCount = GUI.NumberInput(GUI.RectTransform(Vector2(1, 0.1), config.Content.RectTransform), NumberType.Int)
+    backupCount.valueStep = 1
+    backupCount.MinValueInt = 1
+    backupCount.MaxValueInt = 100
+    backupCount.FloatValue = SHH.Config.backupCount
+    backupCount.OnValueChanged = function ()
+      SHH.Config.backupCount = backupCount.FloatValue
+    end
+
+
 --[[
 
 -- Multilines
