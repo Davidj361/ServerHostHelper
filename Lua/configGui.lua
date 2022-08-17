@@ -106,7 +106,7 @@ SHH.ShowGUI = function ()
     backupCount.valueStep = 1
     backupCount.MinValueInt = 1
     backupCount.MaxValueInt = 100
-    backupCount.FloatValue = SHH.Config.backupCount
+    backupCount.IntValue = SHH.Config.backupCount
     backupCount.OnValueChanged = function ()
       SHH.Config.backupCount = backupCount.FloatValue
     end

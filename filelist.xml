@@ -1,4 +1,2 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<contentpackage name="Server Host Helper" modversion="0.1" corepackage="False" altnames="ServerHostHelper">
-  <!-- <Other file="%ModDir%/Lua/Autorun/init.lua" /> -->
-</contentpackage>
+<contentpackage name="Server Host Helper" modversion="0.2" corepackage="False" steamworkshopid="2850087141" gameversion="0.18.15.0" altnames="ServerHostHelper" />
