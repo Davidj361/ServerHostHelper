@@ -4,6 +4,7 @@ SHH.Log = function (message)
   print(SHH.name .. " " .. message)
 end
 SHH.Path = table.pack(...)[1]
+SHH.Debug = false
 local hello = "Starting up!"
 
 
@@ -80,7 +81,8 @@ elseif SERVER then
   local saveCount = 0
   local savePath = ""
   LuaUserData.RegisterType("Barotrauma.SaveUtil")
-  local SaveUtil = LuaUserData.CreateStatic("Barotrauma.SaveUtil")
+  local saveUtil = LuaUserData.CreateStatic("Barotrauma.SaveUtil")
+  local session = Game.GameSession
 
 
   -- Gets the least or most occupied job on the crew
@@ -170,7 +172,6 @@ elseif SERVER then
 
 
   local function addBot()
-    local session = Game.GameSession
     if (session == nil or session.CrewManager == nil) then return end
     local crewManager = session.CrewManager
     local j = getJob():gsub("%s+", "") -- get least occupied job, no spaces
@@ -213,7 +214,9 @@ elseif SERVER then
 
     local character = Character.Create(chr, waypoint.WorldPosition, Game.NetLobbyScreen.LevelSeed)
     character.GiveJobItems()
-    SHH.Log("Added bot")
+    if SHH.Debug then
+      SHH.Log("Added bot")
+    end
   end
 
 
@@ -223,15 +226,19 @@ elseif SERVER then
       if chara.TeamID == CharacterTeamType.Team1 and chara.IsBot and not chara.IsDead and chara.Info.Job.Name.Value == j then
         chara.Kill(CauseOfDeathType.Unknown)
         chara.DespawnNow()
+        if SHH.Debug then
+          SHH.Log("Removed bot")
+        end
         return
       end
     end
-    SHH.Log("Removed bot")
   end
 
 
   local function count()
-    SHH.Log("Counting...")
+    if SHH.Debug then
+      SHH.Log("Counting...")
+    end
     local nPly = 0
     local nBots = 0
     nPly = #Client.ClientList
@@ -240,15 +247,19 @@ elseif SERVER then
         nBots = nBots+1
       end
     end
-    SHH.Log("nPly = "..nPly)
-    SHH.Log("nBots = "..nBots)
+    if SHH.Debug then
+      SHH.Log("nPly = "..nPly)
+      SHH.Log("nBots = "..nBots)
+    end
     return nPly+nBots
   end
 
 
   SHH.handleBots = function (removeBots) -- need this to deal with count() being wrong on disconnects
     if not SHH.Config.bots then return end
-    SHH.Log("Handling bots")
+    if SHH.Debug then
+      SHH.Log("Handling bots")
+    end
     local n = count()
     if removeBots then
       n = n - 1
@@ -265,8 +276,10 @@ elseif SERVER then
 
 
   local function backup()
-    if not SHH.Config.backup then return end
-    SHH.Log("Backing up save...")
+    if not Game.IsMultiplayer or not SHH.Config.backup then return end
+    if SHH.Debug then
+      SHH.Log("Backing up save...")
+    end
 
     local tmp = Game.GameSession.SavePath
     if savePath ~= tmp then
@@ -278,15 +291,18 @@ elseif SERVER then
     local baseName = string.match(savePath, "\\([^\\]*)$")
     baseName = string.match(baseName, "(.*)[.]")
 
-    local saveFilename = baseName .. '-' .. saveCount .. '.save'
-    local xmlFilename = baseName .. '-' .. saveCount .. '_CharacterData.xml'
+    local saveName = baseName .. '-' .. saveCount
+    local saveFilename = saveName .. '.save'
 
-    --Game.SaveGame(basePath .. saveFilename) -- Doesn't always work
-    SaveUtil.SaveGame(basePath .. saveFilename)
-    Game.GameSession.Save(basePath .. xmlFilename)
+    -- CharacterData xml is tightly coupled into the save functions which is dependent on the Session.SavePath
+    session.SavePath = basePath .. saveFilename
+    saveUtil.SaveGame(session.SavePath)
+    session.SavePath = tmp -- Reset it back to avoid -0-0-0... from counter adding on
 
     saveCount = (saveCount + 1) % SHH.Config.backupCount
-    SHH.Log("Save is backed up!")
+    if SHH.Debug then
+      SHH.Log("Save is backed up!")
+    end
   end
 
 
@@ -297,20 +313,22 @@ elseif SERVER then
   Hook.Add("roundEnd", "saveBackup", backup)
 
 
-  --Hook.Add("chatMessage", "debugging", function(message)
-  --	SHH.Log("message = "..message)
-  --	if message == "t" then
-  --    SHH.Log("least job: "..getJob())
-  --    SHH.Log("most job: "..getJob(true))
-  --  elseif message == "a" then
-  --    addBot()
-  --  elseif message == "r" then
-  --    removeBot()
-  --  elseif message == "h" then
-  --    SHH.handleBots()
-  --  elseif message == "s" then
-  --    backup()
-  --	end
-  --end)
+  if SHH.Debug then
+    Hook.Add("chatMessage", "debugging", function(message)
+               SHH.Log("message = "..message)
+               if message == "t" then
+                 SHH.Log("least job: "..getJob())
+                 SHH.Log("most job: "..getJob(true))
+               elseif message == "a" then
+                 addBot()
+               elseif message == "r" then
+                 removeBot()
+               elseif message == "h" then
+                 SHH.handleBots()
+               elseif message == "s" then
+                 backup()
+               end
+    end)
+  end
 
 end
